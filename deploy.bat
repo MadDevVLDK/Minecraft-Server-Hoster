@@ -101,7 +101,74 @@ if exist "%SOURCE_JAR%" (
 echo.
 
 :: ========================================
-:: 4. Создаем главный run.bat в prod
+:: 4. Создаем docker-compose.yml
+:: ========================================
+echo [5/5] Creating docker-compose.yml...
+(
+echo version: '3.8'
+echo.
+echo services:
+echo   picolimbo:
+echo     image: eclipse-temurin:25
+echo     container_name: picolimbo
+echo     ports:
+echo       - "25567:25567"
+echo     volumes:
+echo       - ./picolimbo:/app
+echo     working_dir: /app
+echo     command: ["java", "-Xmx512M", "-jar", "PicoLimbo.jar"]
+echo     restart: unless-stopped
+echo     networks:
+echo       - minecraft-network
+echo.
+echo   velocity:
+echo     image: eclipse-temurin:25
+echo     container_name: velocity
+echo     ports:
+echo       - "25565:25565"
+echo     volumes:
+echo       - ./velocity:/app
+echo     working_dir: /app
+echo     command: ["java", "-Xmx2G", "-jar", "velocity.jar"]
+echo     restart: unless-stopped
+echo     networks:
+echo       - minecraft-network
+echo     depends_on:
+echo       - picolimbo
+echo.
+echo   operator:
+echo     image: eclipse-temurin:25
+echo     container_name: minecraft-server-operator
+echo     ports:
+echo       - "2036:2036"
+echo     environment:
+echo       - APP_MINECRAFT_JAVA_COMMAND=/jdk25.0.3-linux/bin/java
+echo     volumes:
+echo       - ./minecraft-server-operator:/app
+echo       - minecraft-server-data:/server-data
+echo     working_dir: /app
+echo     command: ["java", "-Xmx2G", "-Xms1G", "-jar", "minecraft-server-operator-1.0.0.jar"]
+echo     restart: unless-stopped
+echo     networks:
+echo       - minecraft-network
+echo     depends_on:
+echo       - velocity
+echo       - picolimbo
+echo.
+echo networks:
+echo   minecraft-network:
+echo     driver: bridge
+echo.
+echo volumes:
+echo   minecraft-server-data:
+echo     driver: local
+) > "%PROD_ROOT%\docker-compose.yml"
+
+echo   docker-compose.yml created successfully!
+echo.
+
+:: ========================================
+:: 5. Создаем главный run.bat в prod
 :: ========================================
 echo [Bonus] Creating master run.bat for production...
 (
@@ -161,6 +228,7 @@ echo Production folder: %PROD_ROOT%
 echo.
 echo Structure:
 echo   %PROD_ROOT%\
+echo   ├── docker-compose.yml
 echo   ├── velocity\
 echo   │   ├── velocity.jar
 echo   │   ├── run.bat
@@ -176,8 +244,8 @@ echo       ├── minecraft-server-operator-1.0.0.jar
 echo       └── run.bat
 echo.
 echo To run all services:
-echo   cd /d %PROD_ROOT%
-echo   run.bat
+echo   Windows: cd /d %PROD_ROOT% ^&^& run.bat
+echo   Docker:  cd /d %PROD_ROOT% ^&^& docker-compose up -d
 echo.
 echo ========================================
 
