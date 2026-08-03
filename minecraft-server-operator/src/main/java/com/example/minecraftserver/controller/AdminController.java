@@ -2,6 +2,7 @@ package com.example.minecraftserver.controller;
 
 import java.util.List;
 
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.example.minecraftserver.dto.MyResponse;
 import com.example.minecraftserver.config.AppProperties;
@@ -21,6 +21,7 @@ import com.example.minecraftserver.dto.MyRequest;
 import com.example.minecraftserver.entity.RegistrationInvite;
 import com.example.minecraftserver.service.AppSettingsService;
 import com.example.minecraftserver.service.RegistrationInviteService;
+import com.example.minecraftserver.security.AdminAuthService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,37 @@ public class AdminController {
     private final AppProperties appProperties;
     private final AppSettingsService appSettingsService;
     private final RegistrationInviteService registrationInviteService;
+    private final AdminAuthService adminAuthService;
+
+    @GetMapping({"/login", "/login/"})
+    public String loginPage(HttpSession session, Model model) {
+        if (adminAuthService.isAuthenticated(session)) {
+            return "redirect:/admin";
+        }
+
+        model.addAttribute("adminUsername", adminAuthService.getUsername());
+        return "admin-login";
+    }
+
+    @PostMapping({"/login", "/login/"})
+    public String login(@RequestParam String username,
+                        @RequestParam String password,
+                        HttpSession session,
+                        Model model) {
+        if (adminAuthService.authenticate(username, password, session)) {
+            return "redirect:/admin";
+        }
+
+        model.addAttribute("adminUsername", adminAuthService.getUsername());
+        model.addAttribute("loginError", true);
+        return "admin-login";
+    }
+
+    @PostMapping({"/logout", "/logout/"})
+    public String logout(HttpSession session) {
+        adminAuthService.logout(session);
+        return "redirect:/admin/login";
+    }
 
     
     @GetMapping({"", "/"})
@@ -104,9 +136,17 @@ public class AdminController {
     }
 
     private String buildRegistrationUrlPrefix() {
-        return ServletUriComponentsBuilder.fromCurrentContextPath()
-            .path("/register")
-            .queryParam("invite", "")
-            .toUriString();
+        String inviteUrl = appProperties.getInviteUrl();
+        String normalized = inviteUrl == null ? "" : inviteUrl.trim();
+
+        if (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+
+        if (normalized.endsWith("/register")) {
+            normalized = normalized.substring(0, normalized.length() - "/register".length());
+        }
+
+        return normalized + "/register?invite=";
     }
 }

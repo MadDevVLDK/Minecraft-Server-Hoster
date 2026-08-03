@@ -19,8 +19,9 @@ spring:
 
 app:
   velocity-url: ${VELOCITY_URL:http://80.93.100.117:25565}
+  invite-url: ${INVITE_URL:http://80.93.100.117:${server.port}}
   admin:
-    allowed-ip-addresses: ${ADMIN_ALLOWED_IPS:}
+    password: ${ADMIN_PASSWORD:change-this-password-kirill-gay-master}
     invite-history-page-size: ${INVITE_HISTORY_PAGE_SIZE:10}
   minecraft:
     servers-dir: ./data/minecraft-server

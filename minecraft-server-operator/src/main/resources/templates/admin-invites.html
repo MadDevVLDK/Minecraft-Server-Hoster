@@ -25,9 +25,14 @@
 <div class="container">
     <section class="glass-card page-hero">
         <div>
-            <p class="page-kicker">Локальная админка</p>
+            <p class="page-kicker">Защищенная админка</p>
             <h1 class="page-hero-title">Приглашения на регистрацию</h1>
-            <p class="section-text page-hero-description">Эта страница доступна только из локальной сети. Каждая ссылка одноразовая и живет 24 часа.</p>
+            <p class="section-text page-hero-description">Эта страница доступна из любой сети после входа с логином `admin`. Каждая ссылка одноразовая и живет 24 часа.</p>
+        </div>
+        <div>
+            <form method="post" action="/admin/logout">
+                <button type="submit" class="btn btn-secondary">Выйти</button>
+            </form>
         </div>
     </section>
 

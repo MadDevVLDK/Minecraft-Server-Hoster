@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Некрополь | Вход в админку</title>
+    <link rel="stylesheet" href="/css/darkdeath.css">
+</head>
+<body>
+<div class="container" style="max-width: 520px; margin-top: 15vh;">
+    <div class="glass-card">
+        <p class="page-kicker" style="text-align: center; margin-bottom: 0.5rem;">Защищенная админка</p>
+        <h1 style="text-align: center; margin-bottom: 0.75rem;">Вход в управление приглашениями</h1>
+        <p class="section-text" style="text-align: center; margin-bottom: 2rem;">Страница доступна из любой сети, но требует отдельную admin-сессию.</p>
+        <form method="post" action="/admin/login">
+            <div class="mb-4">
+                <label class="form-label" for="username">Логин</label>
+                <input type="text" id="username" name="username" class="form-control" style="width: 100%;" th:value="${adminUsername}" value="admin" autocomplete="username" required>
+            </div>
+            <div class="mb-4">
+                <label class="form-label" for="password">Пароль</label>
+                <input type="password" id="password" name="password" class="form-control" style="width: 100%;" placeholder="20-символьный пароль" autocomplete="current-password" required>
+            </div>
+            <div th:if="${loginError}" class="inline-message" style="display: block; margin-bottom: 1rem; color: #ff9c8f;">
+                Неверный логин или пароль.
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Войти</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

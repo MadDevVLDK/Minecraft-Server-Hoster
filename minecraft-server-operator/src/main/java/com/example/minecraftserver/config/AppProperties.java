@@ -16,6 +16,7 @@ import lombok.Setter;
 public class AppProperties {
 
     private String velocityUrl;
+    private String inviteUrl;
     private final Minecraft minecraft = new Minecraft();
     private final Admin admin = new Admin();
     private final Security security = new Security();
@@ -43,7 +44,7 @@ public class AppProperties {
     @Getter
     @Setter
     public static class Admin {
-        private List<String> allowedIpAddresses = new ArrayList<>();
+        private String password;
         private int inviteHistoryPageSize;
     }
 
