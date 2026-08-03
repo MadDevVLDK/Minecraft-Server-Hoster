@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Некрополь | Админка приглашений</title>
+    <link rel="stylesheet" href="/css/darkdeath.css">
+    <style>
+        .copy-invite-link {
+            color: #a9dcff;
+            text-decoration: underline;
+            text-decoration-color: rgba(169, 220, 255, 0.55);
+            text-underline-offset: 0.18rem;
+            word-break: break-all;
+            transition: color 0.18s ease, text-decoration-color 0.18s ease;
+        }
+
+        .copy-invite-link:hover {
+            color: #d7f0ff;
+            text-decoration-color: rgba(215, 240, 255, 0.9);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <section class="glass-card page-hero">
+        <div>
+            <p class="page-kicker">Локальная админка</p>
+            <h1 class="page-hero-title">Приглашения на регистрацию</h1>
+            <p class="section-text page-hero-description">Эта страница доступна только из локальной сети. Каждая ссылка одноразовая и живет 24 часа.</p>
+        </div>
+    </section>
+
+    <section class="glass-card panel-card">
+        <div class="section-head section-head--compact">
+            <h2>Лимиты сервиса</h2>
+        </div>
+        <p class="section-text">Здесь настраивается общий лимит одновременно запущенных серверов и суммарный объем RAM, который сервис может выделить всем мирам вместе.</p>
+        <form id="runtimeSettingsForm" class="settings-form-layout" style="margin-top: 1rem;">
+            <div class="form-grid two-columns">
+                <div class="settings-field">
+                    <label class="form-label" for="maxRunningServers">Максимум серверов</label>
+                    <input type="number" id="maxRunningServers" class="form-control" min="1" max="100" th:value="${runtimeSettings.maxRunningServers}" value="5" required>
+                </div>
+                <div class="settings-field">
+                    <label class="form-label" for="maxTotalMemoryGb">Максимум RAM в ГБ</label>
+                    <input type="number" id="maxTotalMemoryGb" class="form-control" min="1" max="512" th:value="${runtimeSettings.maxTotalMemoryGb}" value="12" required>
+                </div>
+            </div>
+            <div class="actions-row">
+                <button type="submit" class="btn btn-primary">Сохранить лимит</button>
+                <div id="runtimeSettingsMessage" class="inline-message"></div>
+            </div>
+        </form>
+    </section>
+
+    <section class="glass-card panel-card" style="margin-top: 1rem;">
+        <div class="section-head section-head--compact">
+            <h2>Новая ссылка</h2>
+        </div>
+        <p class="section-text">Сгенерируй ссылку и передай ее пользователю. После использования или через один день она станет недействительной.</p>
+        <div class="actions-row" style="margin-top: 1rem;">
+            <button type="button" class="btn btn-primary" id="generateInviteBtn">Сгенерировать ссылку</button>
+            <div id="inviteActionMessage" class="inline-message"></div>
+        </div>
+        <div id="latestInviteCard" class="summary-card" hidden style="margin-top: 1rem;">
+            <strong>Последняя ссылка</strong>
+            <a id="latestInviteUrl" href="#" class="copy-invite-link"></a>
+            <span id="latestInviteMeta"></span>
+        </div>
+    </section>
+
+    <section class="glass-card panel-card" style="margin-top: 1rem;">
+        <div class="section-head section-head--compact">
+            <h2>Активные ссылки</h2>
+        </div>
+        <div id="inviteList" class="servers-grid" style="margin-bottom: 0;">
+            <div id="emptyActiveInvitesState" th:if="${#lists.isEmpty(activeRegistrationInvites)}" class="summary-card">
+                <strong>Активных ссылок нет</strong>
+                <span>Сгенерируй новую ссылку выше, чтобы открыть регистрацию.</span>
+            </div>
+            <div th:each="invite : ${activeRegistrationInvites}" class="summary-card">
+                <strong th:text="${invite.statusLabel}">Активная ссылка</strong>
+                <a th:href="${invite.registrationUrl}" th:attr="data-copy-url=${invite.registrationUrl}" class="copy-invite-link" th:text="${invite.registrationUrl}">/register?invite=...</a>
+                <span th:text="${'Создана: ' + #temporals.format(invite.createdAt, 'dd.MM.yyyy HH:mm')}">Создана</span>
+                <span th:text="${'Истекает: ' + #temporals.format(invite.expiresAt, 'dd.MM.yyyy HH:mm')}">Истекает</span>
+                <div class="actions-row">
+                    <button type="button" class="btn btn-secondary deactivate-invite-btn" th:attr="data-token=${invite.token}">Деактивировать</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="glass-card panel-card" style="margin-top: 1rem;">
+        <div class="section-head section-head--compact">
+            <h2>История приглашений</h2>
+        </div>
+        <div id="inviteHistoryList" class="servers-grid" style="margin-bottom: 0;">
+            <div id="emptyInviteHistoryState" th:if="${#lists.isEmpty(inviteHistory)}" class="summary-card">
+                <strong>История пока пуста</strong>
+                <span>После создания, деактивации или использования ссылки события появятся здесь.</span>
+            </div>
+            <div th:each="event : ${inviteHistory}" class="summary-card history-entry">
+                <strong th:text="${event.eventLabel}">Активирована</strong>
+                <a th:href="${event.registrationUrl}" th:attr="data-copy-url=${event.registrationUrl}" class="copy-invite-link" th:text="${event.registrationUrl}">/register?invite=...</a>
+                <span th:text="${#temporals.format(event.happenedAt, 'dd.MM.yyyy HH:mm')}">01.01.2026 00:00</span>
+                <span th:if="${event.username != null and !event.username.isBlank()}" th:text="${'Пользователь: ' + event.username}">Пользователь: demo</span>
+            </div>
+        </div>
+        <div class="actions-row" style="margin-top: 1rem;">
+            <button type="button"
+                    id="loadMoreHistoryBtn"
+                    class="btn btn-secondary"
+                    th:attr="data-page-size=${inviteHistoryPageSize},data-current-page=0"
+                    th:hidden="${!inviteHistoryHasMore}">
+                Получить еще
+            </button>
+        </div>
+    </section>
+</div>
+<th:block th:replace="~{fragments/app-shell :: scripts}"></th:block>
+<script>
+    const loadMoreHistoryBtn = document.getElementById('loadMoreHistoryBtn');
+    const inviteHistoryList = document.getElementById('inviteHistoryList');
+    const inviteList = document.getElementById('inviteList');
+    const historyPageSize = Number(loadMoreHistoryBtn.dataset.pageSize || 10);
+    let currentHistoryPage = Number(loadMoreHistoryBtn.dataset.currentPage || 0);
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function showToast(message, isError = false) {
+        const toast = document.createElement('div');
+        toast.className = 'custom-toast';
+        toast.innerHTML = isError
+            ? '<span style="color: #ff9c8f;">Ошибка: </span>' + escapeHtml(message)
+            : escapeHtml(message);
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'неизвестно';
+        return new Date(dateString).toLocaleString('ru-RU', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+    }
+
+    async function copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function removeEmptyState(elementId) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.remove();
+        }
+    }
+
+    function ensureEmptyHistoryState() {
+        if (document.getElementById('emptyInviteHistoryState')) {
+            return;
+        }
+
+        const emptyState = document.createElement('div');
+        emptyState.id = 'emptyInviteHistoryState';
+        emptyState.className = 'summary-card';
+
+        const title = document.createElement('strong');
+        title.textContent = 'История пока пуста';
+
+        const description = document.createElement('span');
+        description.textContent = 'После создания, деактивации или использования ссылки события появятся здесь.';
+
+        emptyState.appendChild(title);
+        emptyState.appendChild(description);
+        inviteHistoryList.appendChild(emptyState);
+    }
+
+    function createCopyableLink(url) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.textContent = url;
+        link.className = 'copy-invite-link';
+        link.dataset.copyUrl = url;
+        return link;
+    }
+
+    function createActiveInviteCard(invite) {
+        const card = document.createElement('div');
+        card.className = 'summary-card';
+
+        const title = document.createElement('strong');
+        title.textContent = invite.statusLabel;
+
+        const link = createCopyableLink(invite.registrationUrl);
+
+        const createdAt = document.createElement('span');
+        createdAt.textContent = 'Создана: ' + formatDate(invite.createdAt);
+
+        const expiresAt = document.createElement('span');
+        expiresAt.textContent = 'Истекает: ' + formatDate(invite.expiresAt);
+
+        const actions = document.createElement('div');
+        actions.className = 'actions-row';
+
+        const deactivateButton = document.createElement('button');
+        deactivateButton.type = 'button';
+        deactivateButton.className = 'btn btn-secondary deactivate-invite-btn';
+        deactivateButton.dataset.token = invite.token;
+        deactivateButton.textContent = 'Деактивировать';
+        deactivateButton.addEventListener('click', async function() {
+            try {
+                await deactivateInvite(invite.token);
+                await refreshActiveInvites();
+                await loadInviteHistoryPage(0, false);
+                showToast('Ссылка деактивирована');
+            } catch (error) {
+                showToast(error.message || 'Не удалось деактивировать ссылку', true);
+            }
+        });
+
+        actions.appendChild(deactivateButton);
+        card.appendChild(title);
+        card.appendChild(link);
+        card.appendChild(createdAt);
+        card.appendChild(expiresAt);
+        card.appendChild(actions);
+        return card;
+    }
+
+    function createHistoryCard(eventLabel, registrationUrl, happenedAt, username) {
+        const card = document.createElement('div');
+        card.className = 'summary-card history-entry';
+
+        const title = document.createElement('strong');
+        title.textContent = eventLabel;
+
+        const link = createCopyableLink(registrationUrl);
+
+        const happenedAtElement = document.createElement('span');
+        happenedAtElement.textContent = formatDate(happenedAt);
+
+        card.appendChild(title);
+        card.appendChild(link);
+        card.appendChild(happenedAtElement);
+
+        if (username) {
+            const usernameElement = document.createElement('span');
+            usernameElement.textContent = 'Пользователь: ' + username;
+            card.appendChild(usernameElement);
+        }
+
+        return card;
+    }
+
+    function setLoadMoreHistoryVisibility(hasMore) {
+        loadMoreHistoryBtn.hidden = !hasMore;
+        loadMoreHistoryBtn.disabled = false;
+        loadMoreHistoryBtn.textContent = 'Получить еще';
+    }
+
+    function ensureEmptyActiveInvitesState() {
+        if (document.getElementById('emptyActiveInvitesState')) {
+            return;
+        }
+
+        const emptyState = document.createElement('div');
+        emptyState.id = 'emptyActiveInvitesState';
+        emptyState.className = 'summary-card';
+
+        const title = document.createElement('strong');
+        title.textContent = 'Активных ссылок нет';
+
+        const description = document.createElement('span');
+        description.textContent = 'Сгенерируй новую ссылку выше, чтобы открыть регистрацию.';
+
+        emptyState.appendChild(title);
+        emptyState.appendChild(description);
+        inviteList.appendChild(emptyState);
+    }
+
+    function renderActiveInvites(items) {
+        inviteList.querySelectorAll('.summary-card').forEach(function(entry) {
+            entry.remove();
+        });
+
+        if (items.length === 0) {
+            ensureEmptyActiveInvitesState();
+            return;
+        }
+
+        removeEmptyState('emptyActiveInvitesState');
+        const fragment = document.createDocumentFragment();
+        items.forEach(function(item) {
+            fragment.appendChild(createActiveInviteCard(item));
+        });
+        inviteList.appendChild(fragment);
+        bindCopyableLinks(inviteList);
+    }
+
+    function renderHistoryEntries(items, append) {
+        if (!append) {
+            inviteHistoryList.querySelectorAll('.history-entry').forEach(function(entry) {
+                entry.remove();
+            });
+        }
+
+        if (items.length === 0) {
+            if (!append) {
+                ensureEmptyHistoryState();
+            }
+            return;
+        }
+
+        removeEmptyState('emptyInviteHistoryState');
+        const fragment = document.createDocumentFragment();
+        items.forEach(function(item) {
+            fragment.appendChild(createHistoryCard(item.eventLabel, item.registrationUrl, item.happenedAt, item.username));
+        });
+        inviteHistoryList.appendChild(fragment);
+        bindCopyableLinks(inviteHistoryList);
+    }
+
+    async function loadInviteHistoryPage(page, append) {
+        const response = await fetch('/admin/uri/history?page=' + page + '&size=' + historyPageSize, {
+            headers: {'Content-Type': 'application/json'}
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw appShell.createApiError(result, 'Не удалось загрузить историю приглашений');
+        }
+
+        renderHistoryEntries(result.data.items || [], append);
+        currentHistoryPage = result.data.page;
+        loadMoreHistoryBtn.dataset.currentPage = String(currentHistoryPage);
+        setLoadMoreHistoryVisibility(Boolean(result.data.hasMore));
+    }
+
+    async function refreshActiveInvites() {
+        const response = await fetch('/admin/uri/active', {
+            headers: {'Content-Type': 'application/json'}
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw appShell.createApiError(result, 'Не удалось загрузить активные ссылки');
+        }
+
+        renderActiveInvites(result.data || []);
+    }
+
+    function bindCopyableLinks(root = document) {
+        root.querySelectorAll('.copy-invite-link').forEach(function(link) {
+            if (link.dataset.copyBound === 'true') {
+                return;
+            }
+
+            link.dataset.copyBound = 'true';
+            link.addEventListener('click', async function(event) {
+                event.preventDefault();
+                const url = link.dataset.copyUrl || link.href;
+                if (await copyToClipboard(url)) {
+                    showToast('Ссылка скопирована в буфер');
+                } else {
+                    showToast('Не удалось скопировать ссылку', true);
+                }
+            });
+        });
+    }
+
+    async function deactivateInvite(token) {
+        const response = await fetch('/admin/uri/' + encodeURIComponent(token) + '/deactivate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw appShell.createApiError(result, 'Не удалось деактивировать ссылку');
+        }
+
+        return result.data;
+    }
+
+    document.getElementById('runtimeSettingsForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const message = document.getElementById('runtimeSettingsMessage');
+        message.textContent = 'Сохраняем лимит...';
+
+        try {
+            const response = await fetch('/admin/settings/runtime', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    maxRunningServers: Number(document.getElementById('maxRunningServers').value),
+                    maxTotalMemoryGb: Number(document.getElementById('maxTotalMemoryGb').value)
+                })
+            });
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw appShell.createApiError(result, 'Не удалось сохранить лимит');
+            }
+
+            document.getElementById('maxRunningServers').value = result.data.maxRunningServers;
+            document.getElementById('maxTotalMemoryGb').value = result.data.maxTotalMemoryGb;
+            message.textContent = 'Лимиты сохранены.';
+            showToast('Лимиты сервиса обновлены');
+        } catch (error) {
+            message.textContent = '';
+            showToast(error.message || 'Не удалось сохранить лимит', true);
+        }
+    });
+
+    document.getElementById('generateInviteBtn').addEventListener('click', async function() {
+        const message = document.getElementById('inviteActionMessage');
+        message.textContent = 'Генерируем ссылку...';
+
+        try {
+            const response = await fetch('/admin/uri/generate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            });
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw appShell.createApiError(result, 'Не удалось создать ссылку');
+            }
+
+            const invite = result.data;
+            document.getElementById('latestInviteCard').hidden = false;
+            const latestInviteUrl = document.getElementById('latestInviteUrl');
+            latestInviteUrl.textContent = invite.registrationUrl;
+            latestInviteUrl.href = invite.registrationUrl;
+            latestInviteUrl.dataset.copyUrl = invite.registrationUrl;
+            document.getElementById('latestInviteMeta').textContent = 'Истекает: ' + formatDate(invite.expiresAt);
+            message.textContent = 'Ссылка создана.';
+
+            removeEmptyState('emptyActiveInvitesState');
+            inviteList.prepend(createActiveInviteCard(invite));
+
+            bindCopyableLinks(document.getElementById('latestInviteCard'));
+            bindCopyableLinks(inviteList);
+            await loadInviteHistoryPage(0, false);
+
+            if (await copyToClipboard(invite.registrationUrl)) {
+                showToast('Ссылка скопирована в буфер');
+            } else {
+                showToast('Ссылка создана, но не удалось скопировать автоматически');
+            }
+        } catch (error) {
+            message.textContent = '';
+            showToast(error.message || 'Не удалось создать ссылку', true);
+        }
+    });
+
+    document.querySelectorAll('.deactivate-invite-btn').forEach(function(button) {
+        button.addEventListener('click', async function() {
+            try {
+                await deactivateInvite(button.dataset.token);
+                await refreshActiveInvites();
+                await loadInviteHistoryPage(0, false);
+                showToast('Ссылка деактивирована');
+            } catch (error) {
+                showToast(error.message || 'Не удалось деактивировать ссылку', true);
+            }
+        });
+    });
+
+    loadMoreHistoryBtn.addEventListener('click', async function() {
+        loadMoreHistoryBtn.disabled = true;
+        loadMoreHistoryBtn.textContent = 'Загружаем...';
+
+        try {
+            await loadInviteHistoryPage(currentHistoryPage + 1, true);
+        } catch (error) {
+            loadMoreHistoryBtn.disabled = false;
+            loadMoreHistoryBtn.textContent = 'Получить еще';
+            showToast(error.message || 'Не удалось загрузить историю приглашений', true);
+        }
+    });
+
+    bindCopyableLinks();
+</script>
+</body>
+</html>

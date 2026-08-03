@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Некрополь | Вход</title>
+    <link rel="stylesheet" href="/css/darkdeath.css">
+</head>
+<body>
+<div class="container" style="max-width: 500px; margin-top: 15vh;">
+    <div class="glass-card">
+        <p class="page-kicker" style="text-align: center; margin-bottom: 0.5rem;">Некрополь</p>
+        <h1 style="text-align: center; margin-bottom: 0.75rem;">Вход</h1>
+        <p class="section-text" style="text-align: center; margin-bottom: 2rem;">Сервис управления мирами Minecraft</p>
+        <form id="loginForm">
+            <div class="mb-4">
+                <label class="form-label">Username</label>
+                <input type="text" id="username" class="form-control" style="width: 100%;" placeholder="Мрачный странник" required>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Пароль</label>
+                <input type="password" id="password" class="form-control" style="width: 100%;" placeholder="••••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Войти</button>
+            <div class="mt-4 text-center" style="padding-bottom: 1.5rem; text-align: center;">
+                <span style="color: #bb7640;">Регистрация доступна только по одноразовой пригласительной ссылке</span>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="service-modal-backdrop" id="loginTotpModal" hidden>
+    <div class="service-modal glass-card" role="dialog" aria-modal="true" aria-labelledby="loginTotpTitle">
+        <div class="service-modal-head">
+            <div>
+                <p class="service-modal-kicker">Безопасность</p>
+                <h2 id="loginTotpTitle">Подтверждение входа</h2>
+            </div>
+            <button type="button" class="nav-icon-btn service-modal-close" id="loginTotpCloseBtn" aria-label="Закрыть окно">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M6 6l12 12"></path>
+                    <path d="M18 6L6 18"></path>
+                </svg>
+            </button>
+        </div>
+        <form id="loginTotpForm" class="profile-form">
+            <p class="section-text">Для этого аккаунта включен TOTP. Введи шестизначный код из приложения-аутентификатора.</p>
+            <div class="settings-field">
+                <label class="form-label" for="loginTotpCode">TOTP код</label>
+                <input type="text" id="loginTotpCode" class="form-control" maxlength="6" placeholder="123456" required>
+            </div>
+            <div class="actions-row">
+                <button type="button" class="btn btn-secondary" id="loginTotpCancelBtn">Отмена</button>
+                <button type="submit" class="btn btn-primary">Подтвердить вход</button>
+            </div>
+        </form>
+    </div>
+</div>
+<th:block th:replace="~{fragments/app-shell :: scripts}"></th:block>
+<script>
+    let pendingLogin = null;
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function showToast(message, isError = false) {
+        const toast = document.createElement('div');
+        toast.className = 'custom-toast' + (isError ? ' toast-error' : '');
+        toast.innerHTML = isError 
+            ? '<span style="color: #ff9c8f;">Ошибка: </span>' + escapeHtml(message)
+            : escapeHtml(message);
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    function isTotpRequiredError(error) {
+        if (!error) {
+            return false;
+        }
+
+        if (error.code === 1026) {
+            return true;
+        }
+
+        const normalizedMessage = String(error.message || '').trim().toLowerCase();
+        return normalizedMessage === 'totp code is required or invalid';
+    }
+
+    function openTotpModal() {
+        const modal = document.getElementById('loginTotpModal');
+        modal.hidden = false;
+        document.body.classList.add('modal-open');
+        document.getElementById('loginTotpCode').value = '';
+        document.getElementById('loginTotpCode').focus();
+    }
+
+    function closeTotpModal() {
+        const modal = document.getElementById('loginTotpModal');
+        modal.hidden = true;
+        document.body.classList.remove('modal-open');
+    }
+
+    async function completeWebLogin(data) {
+        appShell.logClientEvent('info', 'Открываем веб-сессию после успешной авторизации', { userId: data.userId, username: data.username });
+        localStorage.setItem('token', data.token);
+        const sessionResponse = await fetch('/web/login/success', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({userId: data.userId})
+        });
+        const sessionData = await sessionResponse.json();
+        if (!sessionResponse.ok) {
+            localStorage.removeItem('token');
+            appShell.logClientEvent('error', 'Не удалось открыть веб-сессию', sessionData);
+            throw appShell.createApiError(sessionData, 'Не удалось открыть сессию сайта');
+        }
+
+        appShell.logClientEvent('info', 'Веб-сессия успешно открыта', { userId: data.userId });
+        window.location.href = '/dashboard';
+    }
+
+    async function submitLogin(payload) {
+        const response = await fetch('/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw appShell.createApiError(data, 'Имя или печать неверны');
+        }
+
+        return data.data;
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        appShell.logClientEvent('info', 'Попытка входа через сайт', { username: username });
+        try {
+            const result = await submitLogin({username, password, totpCode: null});
+            if (result.totpRequired) {
+                appShell.logClientEvent('info', 'Сервер запросил TOTP для входа', { username: username });
+                pendingLogin = {username, password};
+                openTotpModal();
+                return;
+            }
+
+            await completeWebLogin(result);
+        } catch (error) {
+            if (isTotpRequiredError(error)) {
+                appShell.logClientEvent('warn', 'Вход требует корректный TOTP-код', { username: username, code: error.code || null });
+                pendingLogin = {username, password};
+                openTotpModal();
+                return;
+            }
+
+            appShell.logClientEvent('warn', 'Ошибка входа через сайт', { username: username, code: error.code || null, message: error.message });
+            pendingLogin = null;
+            closeTotpModal();
+            showToast(error.message || 'Имя или печать неверны', true);
+        }
+    });
+
+    document.getElementById('loginTotpForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        if (!pendingLogin) {
+            closeTotpModal();
+            showToast('Сначала введи логин и пароль', true);
+            return;
+        }
+
+        try {
+            const result = await submitLogin({
+                username: pendingLogin.username,
+                password: pendingLogin.password,
+                totpCode: document.getElementById('loginTotpCode').value.trim()
+            });
+            if (result.totpRequired) {
+                appShell.logClientEvent('warn', 'Сервер повторно запросил TOTP', { username: pendingLogin.username });
+                showToast('Нужен корректный TOTP код', true);
+                return;
+            }
+
+            pendingLogin = null;
+            closeTotpModal();
+            await completeWebLogin(result);
+        } catch (error) {
+            if (isTotpRequiredError(error)) {
+                appShell.logClientEvent('warn', 'Подтверждение входа отклонено по TOTP', { username: pendingLogin.username, code: error.code || null });
+                showToast('Нужен корректный TOTP код', true);
+                return;
+            }
+
+            appShell.logClientEvent('error', 'Ошибка подтверждения входа', { username: pendingLogin.username, code: error.code || null, message: error.message });
+            showToast(error.message || 'Не удалось подтвердить вход', true);
+        }
+    });
+
+    document.getElementById('loginTotpCancelBtn').addEventListener('click', function() {
+        pendingLogin = null;
+        closeTotpModal();
+    });
+
+    document.getElementById('loginTotpCloseBtn').addEventListener('click', function() {
+        pendingLogin = null;
+        closeTotpModal();
+    });
+
+    document.getElementById('loginTotpModal').addEventListener('click', function(event) {
+        if (event.target === event.currentTarget) {
+            pendingLogin = null;
+            closeTotpModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && !document.getElementById('loginTotpModal').hidden) {
+            pendingLogin = null;
+            closeTotpModal();
+        }
+    });
+</script>
+</body>
+</html>

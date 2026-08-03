@@ -1,0 +1,81 @@
+bind = "0.0.0.0:25567"
+welcome_message = "<gold><bold>Некрополь</bold></gold><gray> • </gray><yellow>Точка входа в сеть</yellow>"
+action_bar = "<gray>Авторизация:</gray> <aqua>/login <юзернейм> <пароль> [totp-код]</aqua>"
+default_game_mode = "spectator"
+hardcore = false
+fetch_player_skins = false
+reduced_debug_info = false
+accept_transfers = false
+
+[forwarding]
+method = "NONE"
+
+[world]
+spawn_position = [
+    0.0,
+    320.0,
+    0.0,
+]
+spawn_rotation = [
+    0.0,
+    0.0,
+]
+dimension = "end"
+time = "day"
+
+[world.experimental]
+view_distance = 2
+schematic_file = ""
+lock_time = false
+
+[world.boundaries]
+enabled = true
+min_y = -64
+teleport_message = "<red>Бездна не отпускает. Вернись к алтарю входа.</red>"
+
+[server_list]
+reply_to_status = true
+max_players = 20
+message_of_the_day = "<gold><bold>Некрополь</bold></gold><gray> • </gray><yellow>Auth Lobby</yellow>"
+show_online_player_count = true
+server_icon = "server-icon.png"
+
+[connection]
+keep_alive_interval_seconds = 15
+allow_unsupported_versions = false
+
+[compression]
+threshold = -1
+level = 6
+
+[tab_list]
+enabled = true
+header = "<gold><bold>Некрополь</bold></gold><newline><gray>Вход в сеть пользовательских миров</gray>"
+footer = "<yellow>/login</yellow><gray> для входа • </gray><aqua>/join ID</aqua><gray> после авторизации</gray>"
+player_listed = true
+
+[fly]
+allow_flight = false
+flying = false
+flying_speed = 0.05
+
+[boss_bar]
+enabled = true
+title = "<gold><bold>Некрополь</bold></gold><gray> • </gray><yellow>Авторизуйся, чтобы войти в мир</yellow>"
+health = 1.0
+color = "yellow"
+division = 0
+
+[title]
+enabled = true
+title = "<gold><bold>Некрополь</bold></gold>"
+subtitle = "<gray>Введи </gray><aqua>/login <юзернейм> <пароль> [totp-код]</aqua>"
+fade_in = 10
+stay = 90
+fade_out = 20
+
+[commands]
+spawn = "spawn"
+fly = "fly"
+fly_speed = "flyspeed"
+transfer = "transfer"

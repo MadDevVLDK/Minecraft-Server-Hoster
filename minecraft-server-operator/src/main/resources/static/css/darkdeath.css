@@ -1,0 +1,6 @@
+/* Aggregates the Necropolis theme into small, readable files. */
+@import url('./darkdeath/foundation.css');
+@import url('./darkdeath/components.css');
+@import url('./darkdeath/shell.css');
+@import url('./darkdeath/pages.css');
+@import url('./darkdeath/responsive.css');

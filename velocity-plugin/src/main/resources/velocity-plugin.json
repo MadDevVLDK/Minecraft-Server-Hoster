@@ -1,0 +1,8 @@
+{
+  "name": "Velocity Auth",
+  "version": "1.0",
+  "description": "Authentication plugin for Velocity",
+  "authors": ["me"],
+  "main": "com.example.velocityauth.AuthPlugin",
+  "id": "velocityauth"
+}

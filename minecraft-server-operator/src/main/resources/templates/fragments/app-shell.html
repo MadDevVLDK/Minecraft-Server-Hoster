@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="topNav">
+    <nav class="app-top-nav glass-card" aria-label="Основная навигация">
+        <div class="app-top-nav-spacer" aria-hidden="true"></div>
+        <a href="/dashboard" class="app-top-brand">Некрополь</a>
+        <div class="app-top-nav-actions">
+            <a href="/profile" class="nav-profile-chip" aria-label="Личный кабинет" title="Личный кабинет">
+                <svg class="nav-profile-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 21a8 8 0 0 0-16 0"></path>
+                    <circle cx="12" cy="8" r="4"></circle>
+                </svg>
+                <span id="topNavProfileName" th:text="${dashboardProfile != null and dashboardProfile.username != null ? dashboardProfile.username : 'Профиль'}">Профиль</span>
+            </a>
+            <button type="button" class="nav-logout-btn" id="topNavLogoutBtn" data-open-modal="logoutConfirmModal" aria-label="Выйти из аккаунта" title="Выйти из аккаунта">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <path d="M16 17l5-5-5-5"></path>
+                    <path d="M21 12H9"></path>
+                </svg>
+                
+            </button>
+            <button type="button" class="nav-icon-btn" id="serviceInfoBtn" data-open-modal="serviceInfoModal" aria-label="Информация о сервисе" title="Информация о сервисе">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M9.75 9a2.25 2.25 0 1 1 4.14 1.2c-.37.62-.92.94-1.39 1.27-.59.42-1 .9-1 1.78"></path>
+                    <circle cx="12" cy="17" r="0.8" fill="currentColor" stroke="none"></circle>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <div class="service-modal-backdrop" id="logoutConfirmModal" hidden>
+        <div class="service-modal glass-card" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle">
+            <div class="service-modal-head">
+                <div>
+                    <p class="service-modal-kicker">Аккаунт</p>
+                    <h2 id="logoutConfirmTitle">Подтвердить выход</h2>
+                </div>
+                <button type="button" class="nav-icon-btn service-modal-close" data-close-modal="logoutConfirmModal" aria-label="Закрыть окно">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M6 6l12 12"></path>
+                        <path d="M18 6L6 18"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="service-modal-body">
+                <p>Ты действительно хочешь выйти из аккаунта?</p>
+                <div class="actions-row">
+                    <button type="button" class="btn btn-secondary" data-close-modal="logoutConfirmModal">Остаться</button>
+                    <button type="button" class="btn btn-danger" data-confirm-logout="true">Выйти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="serviceInfoModal">
+    <div class="service-modal-backdrop" id="serviceInfoModal" hidden>
+        <div class="service-modal glass-card" role="dialog" aria-modal="true" aria-labelledby="serviceInfoTitle">
+            <div class="service-modal-head">
+                <div>
+                    <p class="service-modal-kicker">О сервисе</p>
+                    <h2 id="serviceInfoTitle">Некрополь</h2>
+                </div>
+                <button type="button" class="nav-icon-btn service-modal-close" id="serviceInfoCloseBtn" data-close-modal="serviceInfoModal" aria-label="Закрыть окно">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M6 6l12 12"></path>
+                        <path d="M18 6L6 18"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="service-modal-body">
+                <p>Некрополь объединяет сайт управления мирами Minecraft, limbo-авторизацию и серверные инструменты в одном кабинете.</p>
+                <p>Через сервис можно создавать миры, просматривать их состояние, управлять доступом и менять данные учетной записи без выхода из текущего окна.</p>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="minecraftInfoModal">
+    <div class="service-modal-backdrop" id="minecraftInfoModal" hidden>
+        <div class="service-modal glass-card" role="dialog" aria-modal="true" aria-labelledby="minecraftInfoTitle">
+            <div class="service-modal-head">
+                <div>
+                    <p class="service-modal-kicker">Связь с Minecraft</p>
+                    <h2 id="minecraftInfoTitle">Как работает привязка</h2>
+                </div>
+                <button type="button" class="nav-icon-btn service-modal-close" data-close-modal="minecraftInfoModal" aria-label="Закрыть окно">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M6 6l12 12"></path>
+                        <path d="M18 6L6 18"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="service-modal-body">
+                <p>Привязка определяет, какой Minecraft-аккаунт имеет право использовать твои сервера на сайте.</p>
+                <div id="minecraftInfoSummary" class="summary-card"></div>
+                <div class="instruction-box">
+                    <strong>Как менять привязку</strong>
+                    <span>1. Для автоматической привязки зайди на limbo-сервер через нужный Minecraft-аккаунт и выполни `/login &lt;username&gt; &lt;password&gt;`</span>
+                    <span>2. Для ручной перепривязки открой личный кабинет по иконке профиля сверху</span>
+                    <span>3. Для отвязки внутри игры выполни `/unlinkaccount` в консоли limbo-сервера</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="scripts">
+    <script>
+        window.appShell = (function() {
+            const API_ERROR_MESSAGES = Object.freeze({
+                1001: 'Пользователь с таким именем уже существует или введены некорректные данные.',
+                1002: 'Пароль должен содержать от 3 до 100 символов.',
+                1003: 'Указан некорректный UUID Minecraft.',
+                1004: 'Для загрузки модов сервер нужно остановить.',
+                1005: 'Для удаления модов сервер нужно остановить.',
+                1006: 'Разрешена загрузка только непустых .jar файлов.',
+                1007: 'Удалять можно только .jar файлы.',
+                1008: 'Мод не найден.',
+                1009: 'Токен приглашения не указан.',
+                1010: 'Приглашение не найдено.',
+                1011: 'Для запуска нужно выделить минимум 1 ГБ памяти.',
+                1012: 'Максимум одновременно запущенных серверов должен быть не меньше 1.',
+                1013: 'Общий лимит памяти должен быть не меньше 1 ГБ.',
+                1014: 'Проверь корректность заполненных полей.',
+                1015: 'Пользователь не найден или введены некорректные данные.',
+                1016: 'Для регистрации нужна действующая пригласительная ссылка.',
+                1017: 'Доступ запрещен.',
+                1018: 'Это действие доступно только владельцу.',
+                1019: 'Этот сервер сейчас недоступен для просмотра.',
+                1020: 'К этому аккаунту не привязан Minecraft-профиль.',
+                1021: 'UUID Minecraft не совпадает с авторизованным пользователем.',
+                1022: 'Этот Minecraft-аккаунт уже привязан к другому пользователю.',
+                1023: 'Этот Minecraft-аккаунт не привязан к выбранному пользователю.',
+                1024: 'Админка доступна только из локальной сети.',
+                1025: 'Указан неверный TOTP-код.',
+                1026: 'Нужен корректный TOTP-код.',
+                1027: 'Не удалось подтвердить TOTP.',
+                1028: 'Сервер не найден.',
+                1029: 'Ресурс не найден.',
+                1030: 'Сначала начни настройку TOTP.',
+                1031: 'TOTP уже отключен.',
+                1032: 'Сервер уже запускается, подожди немного.',
+                1033: 'Сервер уже запущен.',
+                1034: 'Сервер еще не готов.',
+                1035: 'Порт сервера еще не выделен.',
+                1036: 'Достигнут лимит серверов для одного владельца.',
+                1037: 'Перед изменением настроек сервер нужно остановить.',
+                1038: 'Деактивировать можно только активные приглашения.',
+                1039: 'Белый список доступен только для приватных серверов.',
+                1040: 'Владелец уже имеет доступ к этому серверу.',
+                1041: 'Достигнут общий лимит одновременно запущенных серверов.',
+                1042: 'Достигнут общий лимит памяти сервиса.',
+                1043: 'На сервере произошла внутренняя ошибка.',
+                1044: 'Не удалось скачать сервер.',
+                1045: 'Не удалось сгенерировать QR-код для TOTP.',
+                1046: 'Не удалось сгенерировать TOTP-код.',
+                1047: 'Свободных портов больше нет.',
+                1048: 'Сервер не успел стать готовым за отведенное время.',
+                1049: 'Не удалось запустить сервер.',
+                1050: 'Не удалось прочитать лог сервера.',
+                1051: 'Не удалось загрузить файл мода.',
+                1052: 'Не удалось получить список модов.'
+            });
+
+            function getToken() {
+                return localStorage.getItem('token');
+            }
+
+            function escapeHtml(value) {
+                if (value === null || value === undefined) {
+                    return '';
+                }
+
+                return String(value).replace(/[&<>]/g, function(match) {
+                    if (match === '&') return '&amp;';
+                    if (match === '<') return '&lt;';
+                    if (match === '>') return '&gt;';
+                    return match;
+                });
+            }
+
+            function getOpenModals() {
+                return Array.from(document.querySelectorAll('.service-modal-backdrop')).filter(function(modal) {
+                    return !modal.hidden;
+                });
+            }
+
+            function syncBodyModalState() {
+                document.body.classList.toggle('modal-open', getOpenModals().length > 0);
+            }
+
+            function openModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (!modal) {
+                    return false;
+                }
+
+                modal.hidden = false;
+                syncBodyModalState();
+                return true;
+            }
+
+            function closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (!modal) {
+                    return false;
+                }
+
+                modal.hidden = true;
+                syncBodyModalState();
+                return true;
+            }
+
+            function closeAllModals() {
+                document.querySelectorAll('.service-modal-backdrop').forEach(function(modal) {
+                    modal.hidden = true;
+                });
+                syncBodyModalState();
+            }
+
+            function resolveApiErrorMessage(payload, fallbackMessage) {
+                if (payload && payload.code && API_ERROR_MESSAGES[payload.code]) {
+                    return API_ERROR_MESSAGES[payload.code];
+                }
+
+                if (payload && typeof payload.message === 'string' && payload.message.trim()) {
+                    return payload.message.trim();
+                }
+
+                return fallbackMessage || 'Операция не выполнена';
+            }
+
+            function createApiError(payload, fallbackMessage) {
+                const error = new Error(resolveApiErrorMessage(payload, fallbackMessage));
+                error.code = payload && payload.code ? payload.code : null;
+                error.payload = payload || null;
+                return error;
+            }
+
+            function logClientEvent(level, message, details) {
+                const resolvedLevel = typeof console[level] === 'function' ? level : 'log';
+                const prefix = '[Necropolis] ' + message;
+                if (details === undefined) {
+                    console[resolvedLevel](prefix);
+                    return;
+                }
+
+                console[resolvedLevel](prefix, details);
+            }
+
+            async function fetchJson(url, options) {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Authorization': 'Bearer ' + getToken(),
+                        ...(options && options.headers ? options.headers : {})
+                    }
+                });
+
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return null;
+                }
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw createApiError(result, 'Операция не выполнена');
+                }
+
+                return result.data;
+            }
+
+            async function loadProfile() {
+                return fetchJson('/api/account/profile');
+            }
+
+            function renderMinecraftInfoSummary(profile) {
+                const minecraftInfoSummary = document.getElementById('minecraftInfoSummary');
+                if (!minecraftInfoSummary) {
+                    return;
+                }
+
+                minecraftInfoSummary.innerHTML = profile && profile.minecraftLinked
+                    ? '<strong>' + escapeHtml(profile.minecraftUsername || 'Без имени') + '</strong><span>' + escapeHtml(profile.minecraftUuid || '') + '</span>'
+                    : '<strong>Привязка отсутствует</strong><span>Следующий вход на limbo-сервере свяжет аккаунт сайта с выбранным Minecraft-аккаунтом</span>';
+                minecraftInfoSummary.className = profile && profile.minecraftLinked
+                    ? 'summary-card summary-card-success'
+                    : 'summary-card summary-card-danger';
+            }
+
+            function initAppShell() {
+                document.querySelectorAll('[data-open-modal]').forEach(function(button) {
+                    if (button.dataset.modalOpenBound) {
+                        return;
+                    }
+
+                    button.dataset.modalOpenBound = 'true';
+                    button.addEventListener('click', function() {
+                        openModal(button.dataset.openModal);
+                    });
+                });
+
+                document.querySelectorAll('[data-close-modal]').forEach(function(button) {
+                    if (button.dataset.modalCloseBound) {
+                        return;
+                    }
+
+                    button.dataset.modalCloseBound = 'true';
+                    button.addEventListener('click', function() {
+                        closeModal(button.dataset.closeModal);
+                    });
+                });
+
+                document.querySelectorAll('.service-modal-backdrop').forEach(function(modal) {
+                    if (modal.dataset.modalBackdropBound) {
+                        return;
+                    }
+
+                    modal.dataset.modalBackdropBound = 'true';
+                    modal.addEventListener('click', function(event) {
+                        if (event.target === modal) {
+                            closeModal(modal.id);
+                        }
+                    });
+                });
+
+                if (!document.body.dataset.modalEscapeBound) {
+                    document.body.dataset.modalEscapeBound = 'true';
+                    document.addEventListener('keydown', function(event) {
+                        if (event.key !== 'Escape') {
+                            return;
+                        }
+
+                        const openModals = getOpenModals();
+                        if (openModals.length === 0) {
+                            return;
+                        }
+
+                        closeModal(openModals[openModals.length - 1].id);
+                    });
+                }
+
+                document.querySelectorAll('[data-confirm-logout="true"]').forEach(function(button) {
+                    if (button.dataset.logoutConfirmBound) {
+                        return;
+                    }
+
+                    button.dataset.logoutConfirmBound = 'true';
+                    button.addEventListener('click', function() {
+                        localStorage.clear();
+                        window.location.href = '/login';
+                    });
+                });
+            }
+
+            return {
+                initAppShell: initAppShell,
+                openModal: openModal,
+                closeModal: closeModal,
+                closeAllModals: closeAllModals,
+                resolveApiErrorMessage: resolveApiErrorMessage,
+                createApiError: createApiError,
+                logClientEvent: logClientEvent,
+                loadProfile: loadProfile,
+                renderMinecraftInfoSummary: renderMinecraftInfoSummary
+            };
+        })();
+    </script>
+</th:block>
+</body>
+</html>

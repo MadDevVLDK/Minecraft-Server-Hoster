@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Некрополь | Сотворение мира</title>
+    <link rel="stylesheet" href="/css/darkdeath.css">
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/app-shell :: topNav}"></div>
+    <section class="page-hero glass-card">
+        <div>
+            <p class="page-kicker">Создание мира</p>
+            <h1 class="page-hero-title">Создай свой мир</h1>
+            <p class="section-text page-hero-description">Настрой параметры будущего Minecraft-сервера и запусти новый мир.</p>
+        </div>
+    </section>
+    <div class="glass-card">
+        <h1>Ритуал создания мира</h1>
+        <form id="createForm" class="settings-form-layout">
+            <div class="form-grid three-columns">
+                <div class="settings-field settings-field-wide">
+                    <label class="form-label">Имя мира</label>
+                    <input type="text" id="serverName" class="form-control" required>
+                </div>
+                <div class="settings-field">
+                    <label class="form-label">Версия Minecraft</label>
+                    <select id="mcVersion" class="form-select" required></select>
+                </div>
+                <div class="settings-field">
+                    <label class="form-label">Версия Fabric Loader</label>
+                    <select id="loaderVersion" class="form-select" required></select>
+                </div>
+                <div class="settings-field">
+                    <label class="form-label">Версия Installer</label>
+                    <select id="installerVersion" class="form-select" required></select>
+                </div>
+                <div class="settings-field">
+                    <label class="form-label">MOTD</label>
+                    <input type="text" id="motd" class="form-control" maxlength="120">
+                </div>
+                <div class="settings-field">
+                    <label class="form-label">Максимум игроков</label>
+                    <input type="number" id="maxPlayers" class="form-control" min="1" max="200" value="20">
+                </div>
+                <div class="settings-field">
+                    <label class="form-label">Имя мира</label>
+                    <input type="text" id="levelName" class="form-control" value="world">
+                </div>
+                <div class="settings-field">
+                    <label class="form-label">Сложность</label>
+                    <select id="difficulty" class="form-select">
+                        <option value="peaceful">peaceful</option>
+                        <option value="easy">easy</option>
+                        <option value="normal" selected>normal</option>
+                        <option value="hard">hard</option>
+                    </select>
+                </div>
+                <div class="settings-field">
+                    <label class="form-label">Режим игры</label>
+                    <select id="gamemode" class="form-select">
+                        <option value="survival" selected>survival</option>
+                        <option value="creative">creative</option>
+                        <option value="adventure">adventure</option>
+                        <option value="spectator">spectator</option>
+                    </select>
+                </div>
+                <div class="settings-field">
+                    <label class="form-label">Дальность обзора</label>
+                    <input type="number" id="viewDistance" class="form-control" min="2" max="32" value="10">
+                </div>
+                <div class="settings-field">
+                    <label class="form-label">Simulation distance</label>
+                    <input type="number" id="simulationDistance" class="form-control" min="2" max="32" value="10">
+                </div>
+            </div>
+            <div class="toggle-grid">
+                <label class="checkbox-card"><input type="checkbox" id="isPublic"> <span>Открытый мир (доступен любым странникам)</span></label>
+                <label class="checkbox-card"><input type="checkbox" id="allowNether" checked> <span>Разрешить Nether</span></label>
+                <label class="checkbox-card"><input type="checkbox" id="pvp" checked> <span>Разрешить PvP</span></label>
+            </div>
+            <div class="actions-row">
+                <button type="submit" class="btn btn-primary">Сотворить</button>
+                <a href="/dashboard" class="btn btn-secondary" style="text-align: center;">Отмена</a>
+                <div id="errorMsg" class="text-danger"></div>
+            </div>
+        </form>
+    </div>
+    <div th:replace="~{fragments/app-shell :: serviceInfoModal}"></div>
+</div>
+<th:block th:replace="~{fragments/app-shell :: scripts}"></th:block>
+<script>
+    async function loadVersions() {
+        const res = await fetch('/api/servers/getListVersions');
+        const data = await res.json();
+        if (!res.ok) {
+            document.getElementById('errorMsg').innerText = appShell.resolveApiErrorMessage(data, 'Не удалось загрузить список версий');
+            return;
+        }
+        const mcSelect = document.getElementById('mcVersion');
+        const loaderSelect = document.getElementById('loaderVersion');
+        const installerSelect = document.getElementById('installerVersion');
+        (data.data.minecraftVersions).forEach(v => mcSelect.add(new Option(v, v)));
+        (data.data.loaderVersions).forEach(v => loaderSelect.add(new Option(v, v)));
+        (data.data.installerVersions).forEach(v => installerSelect.add(new Option(v, v)));
+    }
+
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        const serverName = document.getElementById('serverName').value;
+        const body = {
+            serverName,
+            minecraftVersion: document.getElementById('mcVersion').value,
+            loaderVersion: document.getElementById('loaderVersion').value,
+            installerVersion: document.getElementById('installerVersion').value,
+            isPublic: document.getElementById('isPublic').checked,
+            settings: {
+                motd: document.getElementById('motd').value.trim() || `${serverName} | owner world`,
+                maxPlayers: Number(document.getElementById('maxPlayers').value),
+                levelName: document.getElementById('levelName').value.trim() || 'world',
+                allowNether: document.getElementById('allowNether').checked,
+                pvp: document.getElementById('pvp').checked,
+                difficulty: document.getElementById('difficulty').value,
+                gamemode: document.getElementById('gamemode').value,
+                viewDistance: Number(document.getElementById('viewDistance').value),
+                simulationDistance: Number(document.getElementById('simulationDistance').value)
+            }
+        };
+        const response = await fetch('/api/servers/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(body)
+        });
+        const result = await response.json();
+        if (response.ok) {
+            window.location.href = '/dashboard';
+        } else {
+            document.getElementById('errorMsg').innerText = appShell.resolveApiErrorMessage(result, 'Ритуал не удался');
+        }
+    });
+    appShell.initAppShell();
+    loadVersions();
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+server.port: 2036
+
+spring:
+  application.name: minecraft-server
+  datasource:
+      url: jdbc:h2:file:./data/minecraftdb
+      driver-class-name: org.h2.Driver
+      username: sa
+      password:
+  h2.console.enabled: true
+  thymeleaf.cache: false
+  jpa:
+    hibernate.ddl-auto: update
+    show-sql: false
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+app:
+  velocity-url: ${VELOCITY_URL:http://80.93.100.117:25565}
+  admin:
+    allowed-ip-addresses: ${ADMIN_ALLOWED_IPS:}
+    invite-history-page-size: ${INVITE_HISTORY_PAGE_SIZE:10}
+  minecraft:
+    servers-dir: ./data/minecraft-server
+    java-command: ${MINECRAFT_JAVA_COMMAND:C:/Program Files/Java/jdk-25.0.3/bin/java.exe}
+    base-port: ${BASE_PORT:25566}
+    max-port: ${MAX_PORT:26565}
+    default-max-running-servers: ${DEFAULT_MAX_RUNNING_SERVERS:5}
+    default-max-total-memory-mb: ${DEFAULT_MAX_TOTAL_MEMORY_MB:12288}
+    max-log-lines: ${MAX_LOG_LINES:200}
+  jwt:
+    secret: ${JWT_SECRET:mySuperSecretKeyForJwtThatIsAtLeast32CharactersLong}
+    expiration: ${JWT_EXPIRATION:86400000}
+  security:
+    totp:
+      secret-size: ${SECRET_SIZE:20}
+      time-step-seconds: ${TIME_STEP_SECONDS:30}

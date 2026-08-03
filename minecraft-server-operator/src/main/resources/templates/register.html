@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Некрополь | Регистрация</title>
+    <link rel="stylesheet" href="/css/darkdeath.css">
+</head>
+<body>
+<div class="container" style="max-width: 500px; margin-top: 15vh;">
+    <div class="glass-card">
+        <p class="page-kicker" style="text-align: center; margin-bottom: 0.5rem;">Некрополь</p>
+        <h1 style="text-align: center; margin-bottom: 0.75rem;">Регистрация</h1>
+        <p class="section-text" style="text-align: center; margin-bottom: 2rem;">Сервис управления мирами Minecraft</p>
+        <form id="registerForm">
+            <input type="hidden" id="inviteToken" th:value="${inviteToken}">
+            <div class="mb-4">
+                <label class="form-label">Имя заблудшей души</label>
+                <input type="text" id="username" class="form-control" style="width: 100%;" placeholder="Призрачный голос" required>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Пароль</label>
+                <input type="password" id="password" class="form-control" style="width: 100%;" placeholder="••••••" required>
+            </div>
+            <p class="section-text" style="margin-bottom: 1.25rem;">Эта ссылка одноразовая и действует только 24 часа.</p>
+            <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
+            <div class="mt-4 text-center" style="padding-bottom: 1.5rem; text-align: center;">
+                <a href="/login" style="color: #bb7640;"><-- Уже регистрировался? Войти</a>
+            </div>
+        </form>
+    </div>
+</div>
+<th:block th:replace="~{fragments/app-shell :: scripts}"></th:block>
+<script>
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function showToast(message, isError = false) {
+        const toast = document.createElement('div');
+        toast.className = 'custom-toast' + (isError ? ' toast-error' : '');
+        toast.innerHTML = isError 
+            ? '<span style="color: #ff9c8f;">Ошибка: </span>' + escapeHtml(message)
+            : escapeHtml(message);
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const inviteToken = document.getElementById('inviteToken').value;
+        const response = await fetch('/auth/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username, password, inviteToken})
+        });
+        if (response.ok) {
+            window.location.href = '/login';
+        } else {
+            const data = await response.json();
+            showToast(appShell.resolveApiErrorMessage(data, 'Не удалось зарегистрироваться'), true);
+        }
+    });
+</script>
+</body>
+</html>

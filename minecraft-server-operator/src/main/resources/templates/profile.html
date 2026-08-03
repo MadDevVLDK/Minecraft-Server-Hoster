@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Некрополь | Личный кабинет</title>
+    <link rel="stylesheet" href="/css/darkdeath.css">
+</head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments/app-shell :: topNav}"></div>
+
+    <section class="page-hero glass-card">
+        <div>
+            <p class="page-kicker">Личный кабинет</p>
+            <h1 class="page-hero-title">Управление профилем</h1>
+            <p class="section-text page-hero-description">Здесь можно изменять данные аккаунта, такие как имя пользователя, пароль и настройки TOTP.</p>
+        </div>
+        <div class="profile-highlights">
+            <div class="summary-card" id="identitySummary">
+                <strong th:text="${dashboardProfile != null and dashboardProfile.username != null ? dashboardProfile.username : 'Профиль'}">Профиль</strong>
+                <span id="totpIdentityStatus"
+                      th:classappend="${dashboardProfile != null and dashboardProfile.totpEnabled ? ' summary-card-status-success' : ' summary-card-status-danger'}"
+                      th:text="${dashboardProfile != null ? ('TOTP: ' + (dashboardProfile.totpEnabled ? 'включен' : 'не включен')) : 'Данные учетной записи недоступны'}">Получаем данные учетной записи</span>
+                <span th:text="${dashboardProfile != null and dashboardProfile.createdAt != null ? 'Создан: ' + dashboardProfile.createdAt : 'Создан: неизвестно'}">Создан: неизвестно</span>
+            </div>
+            <div class="summary-card" id="dashboardAccountCard">
+                <strong>Связь с Minecraft</strong>
+                <span id="dashboardAccountMinecraft" style="margin-bottom: 0.5rem;"
+                      th:classappend="${dashboardProfile != null and dashboardProfile.minecraftLinked ? ' summary-card-status-success' : ' summary-card-status-danger'}"
+                      th:text="${dashboardProfile != null and dashboardProfile.minecraftLinked ? (dashboardProfile.minecraftUsername != null ? dashboardProfile.minecraftUsername : (dashboardProfile.minecraftUuid != null ? dashboardProfile.minecraftUuid : 'Minecraft привязан')) : 'Minecraft не привязан'}">Проверяем привязку Minecraft...</span>
+                <button type="button" class="btn btn-secondary" id="minecraftInfoBtn" data-open-modal="minecraftInfoModal">Узнать о привязке</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="glass-card panel-card">
+        <div class="section-head section-head--compact">
+            <h2>Быстрые действия</h2>
+        </div>
+        <p class="section-text">Выбери действие для аккаунта. Если TOTP уже включен, код потребуется для изменений и для входа в аккаунт.</p>
+        <div class="profile-action-grid">
+            <button type="button" class="profile-action-btn action-account" id="openUsernameModalBtn">
+                <strong>Сбросить юзернейм</strong>
+                <span>Откроет форму изменения текущего username</span>
+            </button>
+            <button type="button" class="profile-action-btn action-password" id="openPasswordModalBtn">
+                <strong>Сбросить пароль</strong>
+                <span>Откроет форму установки нового пароля</span>
+            </button>
+            <button type="button"
+                    class="profile-action-btn"
+                    th:classappend="${dashboardProfile != null and dashboardProfile.totpEnabled ? ' action-disable' : ' action-totp'}"
+                    id="openTotpActionBtn">
+                <strong id="totpActionTitle"
+                        th:text="${dashboardProfile != null and dashboardProfile.totpEnabled ? 'Выключить TOTP' : 'Настроить TOTP'}">Настроить TOTP</strong>
+                <span id="totpActionDescription"
+                      th:text="${dashboardProfile != null and dashboardProfile.totpEnabled ? 'Откроет подтверждение отключения через текущий TOTP-код' : 'Покажет QR-код и ручной ключ для приложения-аутентификатора'}">Покажет QR-код и ручной ключ для приложения-аутентификатора</span>
+            </button>
+        </div>
+    </section>
+
+    <div class="service-modal-backdrop" id="usernameModal" hidden>
+        <div class="service-modal glass-card" role="dialog" aria-modal="true" aria-labelledby="usernameModalTitle">
+            <div class="service-modal-head">
+                <div>
+                    <p class="service-modal-kicker">Аккаунт</p>
+                    <h2 id="usernameModalTitle" style="margin-bottom: 0;">Сбросить юзернейм</h2>
+                </div>
+                <button type="button" class="nav-icon-btn service-modal-close" data-close-modal="usernameModal" aria-label="Закрыть окно">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>
+                </button>
+            </div>
+            <form id="usernameForm" class="profile-form">
+                <div class="settings-field">
+                    <label class="form-label" for="modalUsername">Новый username</label>
+                    <input type="text" id="modalUsername" class="form-control" minlength="3" maxlength="32" required>
+                </div>
+                <div class="settings-field">
+                    <label class="form-label" for="modalUsernameTotp">TOTP код</label>
+                    <input type="text" id="modalUsernameTotp" class="form-control" maxlength="6" placeholder="Нужен только если TOTP включен">
+                </div>
+                <div class="actions-row">
+                    <button type="submit" class="btn btn-primary">Сохранить username</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="service-modal-backdrop" id="passwordModal" hidden>
+        <div class="service-modal glass-card" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
+            <div class="service-modal-head">
+                <div>
+                    <p class="service-modal-kicker">Безопасность</p>
+                    <h2 id="passwordModalTitle" style="margin-bottom: 0;">Сбросить пароль</h2>
+                </div>
+                <button type="button" class="nav-icon-btn service-modal-close" data-close-modal="passwordModal" aria-label="Закрыть окно">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>
+                </button>
+            </div>
+            <form id="passwordForm" class="profile-form">
+                <div class="settings-field">
+                    <label class="form-label" for="modalNewPassword">Новый пароль</label>
+                    <input type="password" id="modalNewPassword" class="form-control" minlength="3" maxlength="100" required>
+                </div>
+                <div class="settings-field">
+                    <label class="form-label" for="modalRepeatPassword">Повтор нового пароля</label>
+                    <input type="password" id="modalRepeatPassword" class="form-control" minlength="3" maxlength="100" required>
+                </div>
+                <div class="settings-field">
+                    <label class="form-label" for="modalPasswordTotp">TOTP код</label>
+                    <input type="text" id="modalPasswordTotp" class="form-control" maxlength="6" placeholder="Нужен только если TOTP включен">
+                </div>
+                <div class="actions-row">
+                    <button type="submit" class="btn btn-primary">Сохранить пароль</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="service-modal-backdrop" id="totpModal" hidden>
+        <div class="service-modal glass-card" role="dialog" aria-modal="true" aria-labelledby="totpModalTitle">
+            <div class="service-modal-head">
+                <div>
+                    <p class="service-modal-kicker">Безопасность</p>
+                    <h2 id="totpModalTitle" style="margin-bottom: 0;">Настройка TOTP</h2>
+                </div>
+                <button type="button" class="nav-icon-btn service-modal-close" data-close-modal="totpModal" aria-label="Закрыть окно">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>
+                </button>
+            </div>
+            <div class="profile-form">
+                <p class="section-text" id="totpStatusText">Загрузка параметров TOTP...</p>
+                <div class="totp-setup-preview" id="totpSetupPreview" hidden>
+                    <img id="totpQrImage" class="totp-qr-image" alt="TOTP QR code">
+                    <div class="summary-card">
+                        <strong>Ручной ключ</strong>
+                        <span id="totpManualKey" class="totp-manual-key">-</span>
+                    </div>
+                </div>
+                <form id="totpEnableForm" class="profile-form">
+                    <div class="settings-field">
+                        <label class="form-label" for="totpCodeInput">Код из приложения</label>
+                        <input type="text" id="totpCodeInput" class="form-control" maxlength="6" placeholder="123456" required>
+                    </div>
+                    <div class="actions-row">
+                        <button type="button" class="btn btn-secondary" id="refreshTotpBtn">Сгенерировать заново</button>
+                        <button type="submit" class="btn btn-primary">Включить TOTP</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="service-modal-backdrop" id="disableTotpModal" hidden>
+        <div class="service-modal glass-card" role="dialog" aria-modal="true" aria-labelledby="disableTotpModalTitle">
+            <div class="service-modal-head">
+                <div>
+                    <p class="service-modal-kicker">Безопасность</p>
+                    <h2 id="disableTotpModalTitle" style="margin-bottom: 0;">Выключить TOTP</h2>
+                </div>
+                <button type="button" class="nav-icon-btn service-modal-close" data-close-modal="disableTotpModal" aria-label="Закрыть окно">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>
+                </button>
+            </div>
+            <form id="disableTotpForm" class="profile-form">
+                <p class="section-text">Чтобы отключить TOTP, введи текущий шестизначный код из приложения-аутентификатора.</p>
+                <div class="settings-field">
+                    <label class="form-label" for="disableTotpCode">TOTP код</label>
+                    <input type="text" id="disableTotpCode" class="form-control" maxlength="6" placeholder="123456" required>
+                </div>
+                <div class="actions-row">
+                    <button type="submit" class="btn btn-danger">Выключить TOTP</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/app-shell :: serviceInfoModal}"></div>
+    <div th:replace="~{fragments/app-shell :: minecraftInfoModal}"></div>
+</div>
+
+<th:block th:replace="~{fragments/app-shell :: scripts}"></th:block>
+
+<script>
+    let currentProfile = null;
+
+    function getToken() {
+        return localStorage.getItem('token');
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function showToast(message, isError) {
+        const toast = document.createElement('div');
+        toast.className = 'custom-toast';
+        toast.style.background = isError ? '#2c0f0f' : '#1c1a12';
+        toast.style.borderLeftColor = isError ? '#bb3333' : '#b3743a';
+        toast.innerText = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3500);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'неизвестно';
+        const date = new Date(dateString);
+        return date.toLocaleString('ru-RU', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+    }
+
+    async function fetchApi(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                'Authorization': 'Bearer ' + getToken(),
+                ...options.headers
+            }
+        });
+
+        if (response.status === 401) {
+            window.location.href = '/login';
+        }
+
+        return response;
+    }
+
+    function updateTopNavName(username) {
+        const topNavProfileName = document.getElementById('topNavProfileName');
+        if (topNavProfileName && username) {
+            topNavProfileName.textContent = username;
+        }
+    }
+
+    function setMinecraftStatus(profile) {
+        const dashboardAccountMinecraft = document.getElementById('dashboardAccountMinecraft');
+
+        if (dashboardAccountMinecraft) {
+            dashboardAccountMinecraft.className = profile.minecraftLinked
+                ? 'summary-card-status-success'
+                : 'summary-card-status-danger';
+            dashboardAccountMinecraft.textContent = profile.minecraftLinked
+                ? (profile.minecraftUsername || profile.minecraftUuid || 'Minecraft привязан')
+                : 'Minecraft не привязан';
+        }
+
+        appShell.renderMinecraftInfoSummary(profile);
+    }
+
+    function updateTotpActionButton(profile) {
+        const totpActionButton = document.getElementById('openTotpActionBtn');
+        const totpActionTitle = document.getElementById('totpActionTitle');
+        const totpActionDescription = document.getElementById('totpActionDescription');
+
+        if (!totpActionButton || !totpActionTitle || !totpActionDescription) {
+            return;
+        }
+
+        totpActionButton.className = profile.totpEnabled
+            ? 'profile-action-btn action-disable'
+            : 'profile-action-btn action-totp';
+        totpActionTitle.textContent = profile.totpEnabled ? 'Выключить TOTP' : 'Настроить TOTP';
+        totpActionDescription.textContent = profile.totpEnabled
+            ? 'Откроет подтверждение отключения через текущий TOTP-код'
+            : 'Покажет QR-код и ручной ключ для приложения-аутентификатора';
+    }
+
+    function applyProfile(profile) {
+        currentProfile = profile;
+        document.title = `Некрополь | ${profile.username || 'Личный кабинет'}`;
+        updateTopNavName(profile.username);
+        updateTotpActionButton(profile);
+
+        const identitySummary = document.getElementById('identitySummary');
+        const dashboardAccountCard = document.getElementById('dashboardAccountCard');
+        const totpIdentityStatus = document.getElementById('totpIdentityStatus');
+
+        identitySummary.className = 'summary-card';
+        identitySummary.innerHTML = `
+            <strong>${escapeHtml(profile.username || 'Неизвестный пользователь')}</strong>
+            <span id="totpIdentityStatus" class="${profile.totpEnabled ? 'summary-card-status-success' : 'summary-card-status-danger'}">TOTP: ${profile.totpEnabled ? 'включен' : 'не включен'}</span>
+            <span>Создан: ${escapeHtml(formatDate(profile.createdAt))}</span>
+        `;
+
+        dashboardAccountCard.className = 'summary-card';
+        if (totpIdentityStatus) {
+            totpIdentityStatus.className = profile.totpEnabled
+                ? 'summary-card-status-success'
+                : 'summary-card-status-danger';
+        }
+        setMinecraftStatus(profile);
+
+        document.getElementById('modalUsername').value = profile.username || '';
+        document.getElementById('totpStatusText').textContent = profile.totpEnabled
+            ? 'TOTP уже включен. Можно перевыпустить секрет и повторно подтвердить его новым кодом.'
+            : 'TOTP пока не включен. Открой QR-код в приложении-аутентификаторе и введи шестизначный код ниже.';
+    }
+
+    async function loadProfile() {
+        const profile = await appShell.loadProfile();
+        if (!profile) {
+            showToast('Не удалось загрузить профиль', true);
+            return;
+        }
+        applyProfile(profile);
+    }
+
+    async function submitJson(url, body, method = 'PUT') {
+        const response = await fetchApi(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+            throw appShell.createApiError(result, 'Операция не выполнена');
+        }
+
+        return result.data;
+    }
+
+    document.getElementById('openUsernameModalBtn').addEventListener('click', function() {
+        document.getElementById('modalUsernameTotp').value = '';
+        appShell.openModal('usernameModal');
+    });
+
+    document.getElementById('openPasswordModalBtn').addEventListener('click', function() {
+        document.getElementById('modalNewPassword').value = '';
+        document.getElementById('modalRepeatPassword').value = '';
+        document.getElementById('modalPasswordTotp').value = '';
+        appShell.openModal('passwordModal');
+    });
+
+    async function refreshTotpSetup() {
+        try {
+            document.getElementById('totpStatusText').textContent = 'Генерируем TOTP секрет и QR-код...';
+            const setup = await submitJson('/api/account/totp/setup', {}, 'POST');
+            document.getElementById('totpQrImage').src = setup.qrCodeDataUrl;
+            document.getElementById('totpManualKey').textContent = setup.manualEntryKey;
+            document.getElementById('totpSetupPreview').hidden = false;
+            document.getElementById('totpStatusText').textContent = 'Отсканируй QR-код или введи ручной ключ, затем подтверди кодом из приложения.';
+            document.getElementById('totpCodeInput').value = '';
+        } catch (error) {
+            showToast(error.message, true);
+        }
+    }
+
+    document.getElementById('openTotpActionBtn').addEventListener('click', async function() {
+        if (currentProfile && currentProfile.totpEnabled) {
+            document.getElementById('disableTotpCode').value = '';
+            appShell.openModal('disableTotpModal');
+            return;
+        }
+
+        appShell.openModal('totpModal');
+        await refreshTotpSetup();
+    });
+
+    document.getElementById('refreshTotpBtn').addEventListener('click', refreshTotpSetup);
+
+    document.getElementById('usernameForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        try {
+            const profile = await submitJson('/api/account/profile', {
+                username: document.getElementById('modalUsername').value.trim(),
+                totpCode: document.getElementById('modalUsernameTotp').value.trim() || null
+            });
+            applyProfile(profile);
+            appShell.closeModal('usernameModal');
+            showToast('Username обновлен');
+        } catch (error) {
+            showToast(error.message, true);
+        }
+    });
+
+    document.getElementById('passwordForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const newPassword = document.getElementById('modalNewPassword').value;
+        const repeatPassword = document.getElementById('modalRepeatPassword').value;
+
+        if (newPassword !== repeatPassword) {
+            showToast('Повтор пароля не совпадает', true);
+            return;
+        }
+
+        try {
+            await submitJson('/api/account/password', {
+                newPassword: newPassword,
+                totpCode: document.getElementById('modalPasswordTotp').value.trim() || null
+            });
+            appShell.closeModal('passwordModal');
+            document.getElementById('modalNewPassword').value = '';
+            document.getElementById('modalRepeatPassword').value = '';
+            showToast('Пароль обновлен');
+        } catch (error) {
+            showToast(error.message, true);
+        }
+    });
+
+    document.getElementById('disableTotpForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        try {
+            const profile = await submitJson('/api/account/totp/disable', {
+                code: document.getElementById('disableTotpCode').value.trim()
+            }, 'POST');
+            applyProfile(profile);
+            document.getElementById('totpSetupPreview').hidden = true;
+            document.getElementById('totpQrImage').removeAttribute('src');
+            document.getElementById('totpManualKey').textContent = '-';
+            appShell.closeModal('disableTotpModal');
+            showToast('TOTP выключен');
+        } catch (error) {
+            showToast(error.message, true);
+        }
+    });
+
+    document.getElementById('totpEnableForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        try {
+            const profile = await submitJson('/api/account/totp/enable', {
+                code: document.getElementById('totpCodeInput').value.trim()
+            }, 'POST');
+            applyProfile(profile);
+            appShell.closeModal('totpModal');
+            showToast('TOTP включен');
+        } catch (error) {
+            showToast(error.message, true);
+        }
+    });
+
+    appShell.initAppShell();
+    loadProfile();
+</script>
+</body>
+</html>
