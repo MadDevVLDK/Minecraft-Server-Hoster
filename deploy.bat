@@ -105,8 +105,6 @@ echo.
 :: ========================================
 echo [5/5] Creating docker-compose.yml...
 (
-echo version: '3.8'
-echo.
 echo services:
 echo   picolimbo:
 echo     image: eclipse-temurin:25
