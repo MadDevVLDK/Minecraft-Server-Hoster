@@ -37,6 +37,12 @@
         .limbo-link {
             color: #e0bc8c;
         }
+
+        .section-head.section-head--wrap h2 {
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+        }
     </style>
 </head>
 <body>
@@ -60,7 +66,7 @@
         </a>
     </div>
     <section class="glass-card panel-card" style="margin-bottom: 2rem;">
-        <div class="section-head section-head--compact">
+        <div class="section-head section-head--compact section-head--wrap">
             <h2>Нагрузка сервиса</h2>
         </div>
         <p class="section-text">Сводка приходит по websocket только при изменениях и показывает, сколько миров уже запущено и сколько памяти им выделено.</p>
@@ -78,7 +84,7 @@
         </div>
     </section>
     <section class="glass-card panel-card" style="margin-bottom: 2rem;">
-        <div class="section-head section-head--compact">
+        <div class="section-head section-head--compact section-head--wrap">
             <h2>Как подключится в свой мир?</h2>
         </div>
         <p class="section-text">Чтобы подключиться к своему миру, используйте ссылку для подключения в limbo-мир, пройдите в нем авторизацию, а затем подключитесь в нужный мир.</p>

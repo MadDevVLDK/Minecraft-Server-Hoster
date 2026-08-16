@@ -25,7 +25,7 @@ app:
     invite-history-page-size: ${INVITE_HISTORY_PAGE_SIZE:10}
   minecraft:
     servers-dir: ./data/minecraft-server
-    java-command: ${MINECRAFT_JAVA_COMMAND:C:/Program Files/Java/jdk-25.0.3/bin/java.exe}
+    java-command: ${MINECRAFT_JAVA_COMMAND:java} # C:/Program Files/Java/jdk-25.0.3/bin/java.exe
     base-port: ${BASE_PORT:25566}
     max-port: ${MAX_PORT:26565}
     default-max-running-servers: ${DEFAULT_MAX_RUNNING_SERVERS:5}

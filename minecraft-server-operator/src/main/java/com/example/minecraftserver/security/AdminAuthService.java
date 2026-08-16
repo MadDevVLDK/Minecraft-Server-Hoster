@@ -20,8 +20,8 @@ public class AdminAuthService {
     @PostConstruct
     void validateConfiguration() {
         String configuredPassword = appProperties.getAdmin().getPassword();
-        if (configuredPassword == null || configuredPassword.length() != 20) {
-            throw new IllegalStateException("app.admin.password must contain exactly 20 characters");
+        if (configuredPassword == null || configuredPassword.length() < 20) {
+            throw new IllegalStateException("app.admin.password must contain at least 20 characters");
         }
     }
 

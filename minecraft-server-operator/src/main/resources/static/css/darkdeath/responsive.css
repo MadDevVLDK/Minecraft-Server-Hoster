@@ -212,6 +212,23 @@
         font-size: 16px;
     }
 
+    .app-top-nav {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .app-top-brand {
+        width: 100%;
+        text-align: center;
+    }
+
+    .app-top-nav-actions {
+        width: 100%;
+        margin-left: 0;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
     .desktop-text {
         display: none;
     }
